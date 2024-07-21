@@ -21,12 +21,18 @@ public:
     bool AttachProcess(const char* processName);
     bool AttachProcess(const std::string& processName);
     void DetachProcess();
+    DWORD GetProcessID(const wchar_t* processName);
+    DWORD FindPattern(const BYTE* pattern, const char* mask, DWORD startAddress, DWORD endAddress);
+    DWORD GetModuleBaseAddress(const wchar_t* moduleName);
+    DWORD GetModuleBaseAddress(const char* moduleName);
+    DWORD GetModuleBaseAddress(const std::string& moduleName);
     bool ReadMemory(DWORD address, void* buffer, SIZE_T size);
     bool WriteMemory(DWORD address, const void* buffer, SIZE_T size);
+    DWORD AllocateMemory(SIZE_T size, DWORD allocationType, DWORD protect);
+    bool FreeMemory(DWORD address);
 
 private:
     HANDLE hProcess;
-    DWORD GetProcessID(const wchar_t* processName);
     const wchar_t* CharToWchar(const char* charArray);
     const wchar_t* StringToWchar(const std::string& str);
 };

@@ -110,6 +110,93 @@ const wchar_t* Memory::StringToWchar(const std::string& str) {
     return wcharArray;
 }
 
+DWORD Memory::FindPattern(const BYTE* pattern, const char* mask, DWORD startAddress, DWORD endAddress) {
+    SIZE_T patternLength = std::strlen(mask);
+    BYTE* buffer = new BYTE[endAddress - startAddress];
+    ReadMemory(startAddress, buffer, endAddress - startAddress);
+
+    for (SIZE_T i = 0; i < endAddress - startAddress - patternLength; ++i) {
+        bool found = true;
+        for (SIZE_T j = 0; j < patternLength; ++j) {
+            if (mask[j] != '?' && pattern[j] != buffer[i + j]) {
+                found = false;
+                break;
+            }
+        }
+        if (found) {
+            delete[] buffer;
+            return startAddress + i;
+        }
+    }
+    delete[] buffer;
+    return 0;
+}
+
+DWORD Memory::GetModuleBaseAddress(const wchar_t* moduleName) {
+    DWORD moduleBaseAddress = 0;
+    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, GetProcessId(hProcess));
+
+    if (hSnapshot != INVALID_HANDLE_VALUE) {
+        MODULEENTRY32 me;
+        me.dwSize = sizeof(MODULEENTRY32);
+        if (Module32First(hSnapshot, &me)) {
+            do {
+                if (_wcsicmp(me.szModule, moduleName) == 0) {
+                    moduleBaseAddress = (DWORD)me.modBaseAddr;
+                    break;
+                }
+            } while (Module32Next(hSnapshot, &me));
+        }
+        CloseHandle(hSnapshot);
+    }
+
+    return moduleBaseAddress;
+}
+
+DWORD Memory::GetModuleBaseAddress(const char* moduleName) {
+    const wchar_t* wideStrModuleName = CharToWchar(moduleName);
+    DWORD moduleBaseAddress = 0;
+    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, GetProcessId(hProcess));
+
+    if (hSnapshot != INVALID_HANDLE_VALUE) {
+        MODULEENTRY32 me;
+        me.dwSize = sizeof(MODULEENTRY32);
+        if (Module32First(hSnapshot, &me)) {
+            do {
+                if (_wcsicmp(me.szModule, wideStrModuleName) == 0) {
+                    moduleBaseAddress = (DWORD)me.modBaseAddr;
+                    break;
+                }
+            } while (Module32Next(hSnapshot, &me));
+        }
+        CloseHandle(hSnapshot);
+    }
+
+    return moduleBaseAddress;
+}
+
+DWORD Memory::GetModuleBaseAddress(const std::string& moduleName) {
+    const wchar_t* wideStrModuleName = StringToWchar(moduleName);
+    DWORD moduleBaseAddress = 0;
+    HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, GetProcessId(hProcess));
+
+    if (hSnapshot != INVALID_HANDLE_VALUE) {
+        MODULEENTRY32 me;
+        me.dwSize = sizeof(MODULEENTRY32);
+        if (Module32First(hSnapshot, &me)) {
+            do {
+                if (_wcsicmp(me.szModule, wideStrModuleName) == 0) {
+                    moduleBaseAddress = (DWORD)me.modBaseAddr;
+                    break;
+                }
+            } while (Module32Next(hSnapshot, &me));
+        }
+        CloseHandle(hSnapshot);
+    }
+
+    return moduleBaseAddress;
+}
+
 bool Memory::ReadMemory(DWORD address, void* buffer, SIZE_T size) {
 	if (!hProcess) return false;
 	return ReadProcessMemory(hProcess, (LPCVOID)address, buffer, size, nullptr);
@@ -118,4 +205,14 @@ bool Memory::ReadMemory(DWORD address, void* buffer, SIZE_T size) {
 bool Memory::WriteMemory(DWORD address, const void* buffer, SIZE_T size) {
 	if (!hProcess) return false;
 	return WriteProcessMemory(hProcess, (LPVOID)address, buffer, size, nullptr);
+}
+
+DWORD Memory::AllocateMemory(SIZE_T size, DWORD allocationType, DWORD protect) {
+    if (!hProcess) return 0;
+    return (DWORD)VirtualAllocEx(hProcess, nullptr, size, allocationType, protect);
+}
+
+bool Memory::FreeMemory(DWORD address) {
+    if (!hProcess) return false;
+    return VirtualFreeEx(hProcess, (LPVOID)address, 0, MEM_RELEASE);
 }
