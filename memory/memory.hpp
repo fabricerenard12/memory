@@ -1,5 +1,11 @@
-#ifndef MEMORY_H
-#define MEMORY_H
+/**
+ * @file memory.hpp
+ * @brief This file contains the declaration of the Memory class which provides functionality to interact with the memory of processes.
+ * @author Fabrice Renard
+ */
+
+#ifndef MEMORY_HPP
+#define MEMORY_HPP
 
 #include <Windows.h>
 #include <TlHelp32.h>
@@ -7,6 +13,10 @@
 #include <cstdlib>
 #include <string>
 
+/**
+ * @class Memory
+ * @brief Class for handling memory operations on processes.
+ */
 class Memory {
 public:
     Memory();
@@ -37,4 +47,4 @@ private:
     const wchar_t* StringToWchar(const std::string& str);
 };
 
-#endif // !MEMORY_H
+#endif // !MEMORY_HPP
